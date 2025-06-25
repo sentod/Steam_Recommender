@@ -105,11 +105,12 @@ def user_summaries_widget(userSteam, gameDataset):
             st.text(f"Games owned: {len(userSteam.user_games)}")
             if userSteam.user_playtime > 0:
                 st.write(f'Total Playtime: {round(userSteam.user_playtime/60, 2)} hours')
-            top_3_games = []
-            for games in sorted(userSteam.user_games, key=lambda x: x.get('playtime_forever', 0), reverse=True)[:3]:
-                game_data = getData.search_appid(gameDataset, games['appid'])
-                top_3_games.append(game_data['name'])
-            st.text(f"Most Played Games: {', '.join(top_3_games)}")
+                top_3_games = []
+                for games in sorted(userSteam.user_games, key=lambda x: x.get('playtime_forever', 0), reverse=True)[:3]:
+                    game_data = getData.search_appid(gameDataset, games['appid'])
+                    if game_data not None:
+                        top_3_games.append(game_data['name'])
+                st.text(f"Most Played Games: {', '.join(top_3_games)}")
         with st.container(border=True):
             st.header('Genres Played')
             left, right = st.columns([1,1])
