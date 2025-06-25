@@ -151,4 +151,4 @@ def search_appid(gameDataset, appid):
     is_in_dataset_game = gameDataset.games_dataset[gameDataset.games_dataset['steam_appid'] == int(appid)]
     if not is_in_dataset_game.empty:
         return gameDataset.games_dataset.iloc[is_in_dataset_game.index[0]].to_dict()
-    else : return None
+    else : return none
