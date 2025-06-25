@@ -108,7 +108,6 @@ def user_summaries_widget(userSteam, gameDataset):
             top_3_games = []
             for games in sorted(userSteam.user_games, key=lambda x: x.get('playtime_forever', 0), reverse=True)[:3]:
                 game_data = getData.search_appid(gameDataset, games['appid'])
-                print(type(game_data))
                 top_3_games.append(game_data['name'])
             st.text(f"Most Played Games: {', '.join(top_3_games)}")
         with st.container(border=True):
