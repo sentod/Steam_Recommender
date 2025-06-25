@@ -1,12 +1,1 @@
-fuzzywuzzy
-pandas
-ast
-scipy.spatial.distance
-requests
-csv
-bs4
-time
-streamlit
-regex
-collections
-html.parser
+
