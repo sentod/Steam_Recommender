@@ -115,48 +115,24 @@ try:
             try:
                 data2 = response2.json()
                 if response2.status_code == 200:
-                    # IsRespondHasData = bool(data2.get(f'{appid}', {}).get('data', {}))
-                    # print(IsRespondHasData)
-                    # IsReleased = data2.get(f'{appid}', {}).get('data', {}).get('release_date', {}).get('coming_soon') == False
-                    # ItPaidAndHasRecommend = ((data2[f'{appid}']['data']['is_free'] == False and data2.get(f'{appid}', {}).get('data', {}).get('recommendations', {})) or data2[f'{appid}']['data']['is_free'] == True)
-                    # HasGenre = bool(data2.get(f'{appid}', {}).get('data', {}).get('genres', {}))
-                    if data2.get(f'{appid}', {}).get('data', {}).get('release_date', {}).get('coming_soon') == False and ((data2[f'{appid}']['data']['is_free'] == False and data2.get(f'{appid}', {}).get('data', {}).get('recommendations', {})) or data2[f'{appid}']['data']['is_free'] == True) and data2.get(f'{appid}', {}).get('data', {}).get('genres', {}) and data2.get(f'{appid}', {}).get('data', {}).get('pc_requirements', {}):
+                    if data2['steam_appid'] == appid and data2['type'] == "game" and data2.get('release_date', {}).get('coming_soon') == False and ((data2['is_free'] == False and data2.get('recommendations', {})) or data2['is_free'] == True) and (data2.get('genres', {}) or data2.get('categories', {})) and data2.get('pc_requirements', {}).get('minimum'):
                         print(f"Current game is {appid}")
                         currDataGame = {}
-                        currDataGame["name"] = data2[f'{appid}']['data']['name']
-                        currDataGame["steam_appid"] = data2[f'{appid}']['data']['steam_appid']
-                        currDataGame["is_free"] = data2[f'{appid}']['data']['is_free']
-                        currDataGame["header_image"] = data2[f'{appid}']['data']['header_image']
-                        # print(html_to_json(data2[f'{appid}']['data']['pc_requirements']['minimum']))
-                        currDataGame["minimum_req"] = [html_to_json(data2[f'{appid}']['data']['pc_requirements']['minimum'])]
-                        if data2.get(f'{appid}', {}).get('data', {}).get('genres', {}):
-                            currDataGame["genres"] = data2[f'{appid}']['data']['genres']
+                        currDataGame["name"] = data2['name']
+                        currDataGame["steam_appid"] = data2['steam_appid']
+                        currDataGame["is_free"] = data2['is_free']
+                        currDataGame["header_image"] = data2['header_image']
+                        currDataGame["minimum_req"] = [html_to_json(data2['pc_requirements']['minimum'])]
+                        if data2.get('genres', {}):
+                            currDataGame["genres"] = data2['genres']
                         else: currDataGame["genres"] = ''
-                        if data2.get(f'{appid}', {}).get('data', {}).get('categories', {}):
-                            currDataGame["categories"] = data2[f'{appid}']['data']['categories']
+                        if data2.get('categories', {}):
+                            currDataGame["categories"] = data2['categories']
                         else: currDataGame["categories"] = ''
                         if currDataGame["is_free"] == False :
-                            currDataGame["recommendations"] = data2[f'{appid}']['data']['recommendations']['total']
+                            currDataGame["recommendations"] = data2['recommendations']['total']
                         else: currDataGame["recommendations"] = ''
-                        currDataGame["release_date"] = data2[f'{appid}']['data']['release_date']['date']
-                        # del currDataGame["detailed_description"]
-                        # del currDataGame["about_the_game"]
-                        # if "legal_notice" in currDataGame : 
-                        #     del currDataGame["legal_notice"]
-                        # for key, value in currDataGame.items():
-                        #     if isinstance(value, str):  # Check if the value is a string
-                        #         currDataGame[key] = remove_html_tags_and_special_chars(value) # Clean the html.
-                        #     elif isinstance(value, dict):  # Check if the value is a string
-                        #         cleaned_dict = {}  # Create a new dictionary to store cleaned values
-                        #         for key1, value1 in value.items():
-                        #             if isinstance(value1,str): #add check if value1 is string.
-                        #                 cleaned_dict[key1] = remove_html_tags_and_special_chars(value1)
-                        #             else:
-                        #                 cleaned_dict[key1] = value1 #keep value if not a string.
-                        #         currDataGame[key] = cleaned_dict   # Clean the html.
-                        # currDataGame["detailed_description"] = remove_html_tags_using_parser(currDataGame["detailed_description"])
-                        # currDataGame["about_the_game"] = remove_html_tags_using_parser(currDataGame["about_the_game"])
-                        # removedHtml = remove_html_tags_using_parser(str(data2[f'{appid}']['data']))
+                        currDataGame["release_date"] = data2['release_date']['date']
                         records = [ ]
                         records.append(currDataGame)
                         df = pd.DataFrame(records)
@@ -165,7 +141,6 @@ try:
                             firstTimeGameSet=False
                         else:
                             df.to_csv(output_csv_file, mode='a', header=False, index=False, quoting=csv.QUOTE_MINIMAL, quotechar='"', encoding='utf-8')
-                        
                     else:
                         unsuccess = [ ]
                         unsuccess.append(currGame)

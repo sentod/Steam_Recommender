@@ -4,6 +4,8 @@ import streamlit as st
 from collections import deque
 import ast
 import json
+import asyncio
+import aiohttp
 
 import loadData
 
@@ -15,6 +17,8 @@ def user_custom(id):
     return f'http://api.steampowered.com/ISteamUser/ResolveVanityURL/v0001/?key=798368E586087D516B3A48D720A0B572&vanityurl={id}'
 def detail_game_url(appid):
     return f"https://store.steampowered.com/api/appdetails/?appids={appid}"
+def price_game_url(appids):
+    return f"https://store.steampowered.com/api/appdetails/?appids={appids}&filters=price_overview"
 headers = {
     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36',
     'Referer': 'https://www.google.com/',
@@ -22,8 +26,6 @@ headers = {
 }
 
 def search_steamid(id, userSteam):
-    # st.session_state['searching'] = True
-    # id = st.session_state.steam_id_input
     try:
         print('searching steam account')
         response1 = requests.get(user_custom(id), timeout=30) 
@@ -43,7 +45,6 @@ def search_steamid(id, userSteam):
                 if response3.status_code == 429:
                     isDone = False
                     time.sleep(5)
-                    # return False
                 else: isDone = True
         else:
             print(f'getting steamid :{id}')
@@ -60,7 +61,6 @@ def search_steamid(id, userSteam):
                 if response3.status_code == 429:
                     isDone = False
                     time.sleep(5)
-                    # return False
                 else: isDone = True
         data2 = (response2.json())['response']
         data3 = (response3.json())['response']
@@ -68,16 +68,11 @@ def search_steamid(id, userSteam):
             userSteam.user_games = data2['games']
         if(data3.get('players', {})):
             userSteam.user_summaries = data3['players']
-        # print(data3.get('players', {}))
         return True
-        # st.session_state['searching'] = False
-    except Exception as e: # Catches pandas errors too
-        # st.experimental_rerun()
+    except Exception as e:
         print(f"An unexpected error occurred: {e}")
         st.session_state['steam_id_input_label'] = "Cannot find your SteamID, try again"
         return False
-        # print(st.session_state['steam_id_input_label'])
-        # st.session_state['searching'] = False
         
 def get_user_game(userSteam, gameDataset):
     playtime = 0
@@ -86,7 +81,6 @@ def get_user_game(userSteam, gameDataset):
     initial_df_progress = st.progress(0, text=progress_text)
     user_games = deque(userSteam.user_games)
     index = 0
-    print(gameDataset.ignored_games_dataset)
     while len(user_games) > 0:
         games = user_games.popleft()
         initial_df_progress.progress(index/len(userSteam.user_games), progress_text)
@@ -120,7 +114,6 @@ def get_user_game(userSteam, gameDataset):
                         if type(data_game['genres']) == list:
                             for game_genres in data_game['genres']:
                                 owned_game_genres.append('1.'+game_genres['id'])
-                        # print(index)
                     if data_game.get('categories'):
                         if type(data_game['categories']) == str:
                                 data_game['categories'] = ast.literal_eval(data_game['categories'])
@@ -132,12 +125,10 @@ def get_user_game(userSteam, gameDataset):
                     data_game_result['genres'] = owned_game_genres
                     data_game_result['playtimeInMinutes'] = games['playtime_forever']
                     owned_game_data.append(data_game_result)
-                    # print(owned_game_genres)
             except json.JSONDecodeError:
                 print("Error: Could not decode JSON response.")
-                # print("Response Text:", response.text)
                 exit()
-        except Exception as e: # Catches pandas errors too
+        except Exception as e: 
             print(f"An unexpected error occurred: {e} {type(data_game.get('genres', {}))}../")
             data_game = None 
             continue  
@@ -152,3 +143,42 @@ def search_appid(gameDataset, appid):
     if not is_in_dataset_game.empty:
         return gameDataset.games_dataset.iloc[is_in_dataset_game.index[0]].to_dict()
     else : return None
+
+# def get_games_price(appids, gameDataset):
+#     data_game = None
+#     while data_game == None:
+#         response2 = requests.get(price_game_url(appids), headers=headers)
+#         if response2.status_code == 200:
+#             data_game = (response2.json())
+#             gameDataset.games_price = data_game
+#         elif response2.status_code == 429:
+#             print(f"Too many requests. Retry for getting prices. Sleep for 5 sec")
+#             time.sleep(5)
+#             data_game = None
+#             continue
+        
+async def get_games_price(appid):
+    session = None
+    url = price_game_url(appid)
+    try:
+        session = aiohttp.ClientSession()
+        retry = False
+        while retry == False :
+            async with session.get(url, timeout=5) as response:
+                if response.status == 429 :
+                    print(f"Too many requests. Retry for getting prices. Sleep for 5 sec")
+                    time.sleep(5)
+                    retry = True
+                    continue
+                else:
+                    retry = False
+                    response.raise_for_status()
+                    return await response.json()
+    except aiohttp.ClientError as e:
+        return {"error": f"Failed to fetch {url}: {e}"}
+    except asyncio.TimeoutError:
+        return {"error": f"Timeout fetching {url}"}
+    finally:
+        if session:
+            # IMPORTANT: Always close the session in a finally block
+            await session.close()

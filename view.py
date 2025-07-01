@@ -1,3 +1,4 @@
+import asyncio
 import time
 import streamlit as st
 import regex as re
@@ -163,6 +164,10 @@ def recommendation_result(gameDataset, userSteam, hardwareDataset):
     # if 'current_page' not in st.session_state:
     #     st.session_state.current_page = 1
     calculation.recommendation_calculation(gameDataset, userSteam)
+    # appids = ', '.join([item['steam_appid'] for item in userSteam.user_recommendation[0:3]])
+    # appids = ','.join([str(item['steam_appid']) for item in userSteam.user_recommendation][0:100])
+    # getData.get_games_price(appids, gameDataset)
+    # print(gameDataset.games_price["997070"])
     st_test = pd.DataFrame(userSteam.user_recommendation)
     
     recomendation_page(st_test, userSteam, hardwareDataset)
@@ -251,7 +256,24 @@ def recomendation_page(dataframe ,userSteam, hardwareDataset):
 def game_card(data, hardwareDataset, userSteam):
     st.image(data['header_image'], caption=data['name'])
     st.progress(data['cosine'], text=f"Preference Compatibility: {round(data['cosine']*100, 2)}%")
-    
+    with st.container():
+        left, right = st.columns([1,1])
+        with left:
+            with st.spinner(f"getting price..."):
+                price = asyncio.run(getData.get_games_price(data['steam_appid']))
+            if price:
+                gamePrice = price[str(data['steam_appid'])]['data']
+                if type(gamePrice) == dict :
+                    if gamePrice['price_overview']['discount_percent'] > 0 :
+                        st.markdown(f''' 
+                                    :green[{gamePrice["price_overview"]['final_formatted']}] (:green[{gamePrice['price_overview']['discount_percent']}% off])
+                                    ''')
+                else: st.text("Free")
+                # st.success("Data fetched successfully!")
+            else:
+                st.text("Failed to get price") 
+        with right:
+            st.link_button("Go to store page", f"https://store.steampowered.com/app/{data['steam_appid']}")
     with st.container():
         left, right = st.columns([2,5])
         with left:

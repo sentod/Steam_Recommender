@@ -37,14 +37,8 @@ def extractData(html_str):
 
 try:
     response = requests.get(site_url, headers=headers, timeout=30)
-    # response.raise_for_status() 
-    
     try:
-        # data = response
-        # print(extractData(response.text))
         result = json.loads(extractData(response.text))
-        # result.append(extractData(response.text))
-        # print(type(extractData(response.text)))
         df = pd.DataFrame(result)
         df.to_csv(output_csv, index=False, quoting=csv.QUOTE_MINIMAL, quotechar='"', encoding='utf-8')
         print(f'Successfuly export to {output_csv}')

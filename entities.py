@@ -8,6 +8,7 @@ class gameDataset:
     all_genres = []
     all_categories = []
     all_genres_categories = None
+    games_price = None
 
 class userSteam:
     user_summaries = None

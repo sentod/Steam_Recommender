@@ -7,16 +7,9 @@ import ast
 from scipy.spatial.distance import cosine
 
 def calculate_user_profile(owned_game_data, gameDataset, userSteam):
-    # data = (response.json())['response']['games']
-    # data_user = (response_user_summaries.json())['response']['players']
-    # print(data_user)
-    
-    # print(owned_game_data)
-
     user_profile = []
     progress_text = 'calculating user profile'
     initial_df_progress = st.progress(0, text=progress_text)
-    # initial_df_progress = st.progress(0, text=progress_text)
     for index, owned_games in enumerate(owned_game_data):
         initial_df_progress.progress(index/len(owned_game_data), progress_text)
         game_one_hot = []
@@ -48,11 +41,8 @@ def calculate_user_profile(owned_game_data, gameDataset, userSteam):
                 if userSteam.user_playtime == 0:
                     user_profile[i]['profile'] = user_profile[i]['count']
                 else: user_profile[i]['profile'] += a['profile'] 
-                # print(user_profile)
                 i += 1
     userarray_profile = []
-    # print(len(owned_game_data))
-    # print(user_profile)
     for profile in user_profile:
         if userSteam.user_playtime == 0:
             profile['profile'] /= len(owned_game_data)
@@ -60,29 +50,21 @@ def calculate_user_profile(owned_game_data, gameDataset, userSteam):
     
     userSteam.user_favorite_genre = []
     userSteam.user_favorite_categories = []
-    # print([list(row) for row in zip(*[gameDataset.all_genres_categories, userarray_profile])])
     for item in [list(row) for row in zip(*[gameDataset.all_genres_categories, userarray_profile])]:
-        # tempgenres = []
-        # tempcategories = []
         getid = str(item[0]).split(".")
-        # print(getid)
         if getid[0] == '1':
             for item2 in gameDataset.all_genres:
                 if getid[1] == str(item2[0]) and item[1]>0:
-                    # tempgenres.append([getid[1], item2[1], item[1]])
                     userSteam.user_favorite_genre.append([getid[1], item2[1], item[1]])
-            # print(userSteam.user_favorite_genre)
         elif getid[0] == '2':
             for item2 in gameDataset.all_categories:
                 if getid[1] == str(item2[0]) and item[1]>0:
-                    # tempcategories.append([getid[1], item2[1], item[1]])
                     userSteam.user_favorite_categories.append([getid[1], item2[1], item[1]])
     
     userSteam.user_favorite_genre = pd.DataFrame(userSteam.user_favorite_genre, columns=['id', 'desc', 'cosine']).sort_values('cosine', ascending=False)
     userSteam.user_favorite_categories = pd.DataFrame(userSteam.user_favorite_categories, columns=['id', 'desc', 'cosine']).sort_values('cosine', ascending=False)
     userSteam.user_profile = userarray_profile
     initial_df_progress.empty()
-    # print(userarray_profile)
     
 def recommendation_calculation(gameDataset, userSteam):    
     cosine_all_games = []
