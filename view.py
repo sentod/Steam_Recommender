@@ -268,6 +268,7 @@ def game_card(data, hardwareDataset, userSteam):
                         st.markdown(f''' 
                                     :green[{gamePrice["price_overview"]['final_formatted']}] (:green[{gamePrice['price_overview']['discount_percent']}% off])
                                     ''')
+                    else: st.text(gamePrice["price_overview"]['final_formatted'])
                 else: st.text("Free")
                 # st.success("Data fetched successfully!")
             else:
