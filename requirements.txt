@@ -3,3 +3,5 @@ regex
 fuzzywuzzy
 scipy
 pandas
+aiohttp
+asyncio
