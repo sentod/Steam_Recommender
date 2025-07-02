@@ -34,9 +34,7 @@ def minimum_req_input(minimum, i, hardwareDataset, userSteam):
                 st.progress(spec_recomend['memory_ratio'], text=f"Memory Compability")
                 st.divider()
                 st.progress(spec_recomend['final_ratio'], text=f"Final Compability {round(spec_recomend['final_ratio']*100, 2)}%")
-                if spec_recomend['final_ratio'] > 0.9:
-                    st.text('Compatible')
-                else : st.text("Not Compatible")
+                st.text(spec_recomend['result'])
             if type(spec_recomend) is str: st.text(spec_recomend)
                 
             
@@ -95,94 +93,62 @@ def user_spec_input(hardwareDataset, userSteam):
 
 def user_summaries_widget(userSteam, gameDataset):
     st.session_state.current_page = 1
-    calculation.calculate_user_profile(getData.get_user_game(userSteam, gameDataset), gameDataset, userSteam)
-    with st.sidebar:
-        with st.container():
-            left, right = st.columns([1,2])
-            with left:
-                st.image(userSteam.user_summaries[0]['avatarfull'])
-            with right:
-                st.title(userSteam.user_summaries[0]['personaname'])
-            st.text(f"Games owned: {len(userSteam.user_games)}")
-            if userSteam.user_playtime > 0:
-                st.write(f'Total Playtime: {round(userSteam.user_playtime/60, 2)} hours')
-                top_3_games = []
-                for games in sorted(userSteam.user_games, key=lambda x: x.get('playtime_forever', 0), reverse=True)[:3]:
-                    game_data = getData.search_appid(gameDataset, games['appid'])
-                    if game_data is not None:
-                        top_3_games.append(game_data['name'])
-                st.text(f"Most Played Games: {', '.join(top_3_games)}")
-        with st.container(border=True):
-            st.header('Genres Played')
-            left, right = st.columns([1,1])
-            # print(userSteam.user_favorite_genre.tolist())
-            # sort_by_cosine = sorted(userSteam.user_favorite_genre, key=lambda item: item['cosine'], reverse=True)
-            with left:
-                st.subheader("Genres")
-            with right:
-                st.subheader("Preference")
-            for index, row in userSteam.user_favorite_genre.iterrows():
-                with st.container():
-                    left, right = st.columns([1,1])
-                    with left:
-                        # st.subheader("Genres")
-                        # for genre_desc in userSteam.user_favorite_genre['desc'].tolist():
-                        st.text(row['desc'])
-                        # st.bar_chart(userSteam.user_favorite_genre, x='desc', y='cosine', horizontal=True)
-                    with right:
-                        # for genre_cosine in userSteam.user_favorite_genre['cosine'].tolist():
-                        st.progress(row['cosine'], text=f"{round(row['cosine']*100, 2)}%")
-                            # st.text(f"{round(genre_cosine*100, 2)}%")
-                        # top3list = userSteam.user_favorite_genre['desc'].head(3).tolist()
-                        # st.write(f"Your top 3 genres based on your playtime is {top3list}", unsafe_allow_html=True)
-        with st.container(border=True):
-            st.header('Categories Played')
-            left, right = st.columns([1,1])
-            with left:
-                st.subheader("Categories")
-            with right:
-                st.subheader("Preference")
-            for index, row in userSteam.user_favorite_categories.iterrows():
-                with st.container():
-                    left, right = st.columns([1,1])
+    user_game = getData.get_user_game(userSteam, gameDataset)
+    if user_game is not None:
+        calculation.calculate_user_profile(user_game, gameDataset, userSteam)
+        with st.sidebar:
+            with st.container():
+                left, right = st.columns([1,2])
                 with left:
-                    st.text(row['desc'])
-                    # st.subheader("Categories")
-                    # for categories_desc in userSteam.user_favorite_categories['desc'].tolist():
-                    #     st.text(categories_desc)
-                    # st.bar_chart(userSteam.user_favorite_categories, x='desc', y='cosine', horizontal=True)
+                    st.image(userSteam.user_summaries[0]['avatarfull'])
                 with right:
-                    st.progress(row['cosine'], text=f"{round(row['cosine']*100, 2)}%")
-                    # st.subheader("Preference")
-                    # for categories_desc in userSteam.user_favorite_categories['cosine'].tolist():
-                    #     st.text(f"{round(categories_desc*100, 2)}%")
-                    # top3list = userSteam.user_favorite_categories['desc'].head(3).tolist()
-                    # st.write(f"Your top 3 categories based on your playtime is {top3list}", unsafe_allow_html=True)
+                    st.title(userSteam.user_summaries[0]['personaname'])
+                st.text(f"Games owned: {len(userSteam.user_games)}")
+                if userSteam.user_playtime > 0:
+                    st.write(f'Total Playtime: {round(userSteam.user_playtime/60, 2)} hours')
+                    top_3_games = []
+                    for games in sorted(userSteam.user_games, key=lambda x: x.get('playtime_forever', 0), reverse=True)[:3]:
+                        game_data = getData.search_appid(gameDataset, games['appid'])
+                        if game_data is not None:
+                            top_3_games.append(game_data['name'])
+                    st.text(f"Most Played Games: {', '.join(top_3_games)}")
+            with st.container(border=True):
+                st.header('Genres Played')
+                left, right = st.columns([1,1])
+                with left:
+                    st.subheader("Genres")
+                with right:
+                    st.subheader("Preference")
+                for index, row in userSteam.user_favorite_genre.iterrows():
+                    with st.container():
+                        left, right = st.columns([1,1])
+                        with left:
+                            st.text(row['desc'])
+                        with right:
+                            st.progress(row['cosine'], text=f"{round(row['cosine']*100, 2)}%")
+            with st.container(border=True):
+                st.header('Categories Played')
+                left, right = st.columns([1,1])
+                with left:
+                    st.subheader("Categories")
+                with right:
+                    st.subheader("Preference")
+                for index, row in userSteam.user_favorite_categories.iterrows():
+                    with st.container():
+                        left, right = st.columns([1,1])
+                    with left:
+                        st.text(row['desc'])
+                    with right:
+                        st.progress(row['cosine'], text=f"{round(row['cosine']*100, 2)}%")
+        return True
+    else: 
+        st.warning("Cannot get user games")
+        return False
          
 def recommendation_result(gameDataset, userSteam, hardwareDataset):
-    
-    # if 'current_page' not in st.session_state:
-    #     st.session_state.current_page = 1
     calculation.recommendation_calculation(gameDataset, userSteam)
-    # appids = ', '.join([item['steam_appid'] for item in userSteam.user_recommendation[0:3]])
-    # appids = ','.join([str(item['steam_appid']) for item in userSteam.user_recommendation][0:100])
-    # getData.get_games_price(appids, gameDataset)
-    # print(gameDataset.games_price["997070"])
     st_test = pd.DataFrame(userSteam.user_recommendation)
-    
     recomendation_page(st_test, userSteam, hardwareDataset)
-        
-    # st.markdown(
-    #     """
-    #     <style>
-    #         .stDataFrame {
-    #             overflow: hidden !important;
-    #         }
-    #     </style>
-    #     """,
-    #     unsafe_allow_html=True,
-    # )
-    # st.dataframe(st_test.head(10))
     
 def paginate_dataframe(df, page_number, items_per_page, total_items):
     start_index = (page_number - 1) * items_per_page
@@ -220,7 +186,7 @@ def recomendation_page(dataframe ,userSteam, hardwareDataset):
             if st.session_state.current_page > 1:
                 st.session_state.current_page -= 1
                 placeholder.empty()
-                time.sleep(0.5)
+                time.sleep(1)
                 st.rerun(scope="fragment") # Rerun to update content
 
     # Display current page number (or a selectbox for direct jump)
@@ -239,7 +205,7 @@ def recomendation_page(dataframe ,userSteam, hardwareDataset):
         if st.session_state.current_page != int(selected_page_str):
             st.session_state.current_page = int(selected_page_str)
             placeholder.empty()
-            time.sleep(0.5)
+            time.sleep(1)
             st.rerun(scope="fragment")
 
     with pagination_cols[3]:
@@ -247,32 +213,41 @@ def recomendation_page(dataframe ,userSteam, hardwareDataset):
             if st.session_state.current_page < total_pages:
                 st.session_state.current_page += 1
                 placeholder.empty()
-                time.sleep(0.5)
+                time.sleep(1)
                 st.rerun(scope="fragment") # Rerun to update content
 
     with pagination_cols[4]:
         st.write(f"Page {st.session_state.current_page} of {total_pages}")  
-    
+
+# @st.fragment 
+def game_price(appid):
+    with st.spinner("getting price..."):
+        price = getData.get_games_price(appid)
+    if price:
+        if 'data' in price[str(appid)]:
+            gamePrice = price[str(appid)]['data']
+            if type(gamePrice) == dict :
+                if gamePrice['price_overview']['discount_percent'] > 0 :
+                    st.markdown(f''' 
+                                :green[{gamePrice["price_overview"]['final_formatted']}] (:green[{gamePrice['price_overview']['discount_percent']}% off])
+                                ''')
+                else: st.text(gamePrice["price_overview"]['final_formatted'])
+            else: st.text("Free")
+        else: st.text("cannot get price")
+        # st.success("Data fetched successfully!")
+    # elif 'data' not in price[str(appid)]:
+    #     st.text("cannot get price")
+    else:
+        st.text("cannot get price")
+        # st.rerun(scope="fragment")
+   
 def game_card(data, hardwareDataset, userSteam):
     st.image(data['header_image'], caption=data['name'])
     st.progress(data['cosine'], text=f"Preference Compatibility: {round(data['cosine']*100, 2)}%")
     with st.container():
         left, right = st.columns([1,1])
         with left:
-            with st.spinner(f"getting price..."):
-                price = asyncio.run(getData.get_games_price(data['steam_appid']))
-            if price:
-                gamePrice = price[str(data['steam_appid'])]['data']
-                if type(gamePrice) == dict :
-                    if gamePrice['price_overview']['discount_percent'] > 0 :
-                        st.markdown(f''' 
-                                    :green[{gamePrice["price_overview"]['final_formatted']}] (:green[{gamePrice['price_overview']['discount_percent']}% off])
-                                    ''')
-                    else: st.text(gamePrice["price_overview"]['final_formatted'])
-                else: st.text("Free")
-                # st.success("Data fetched successfully!")
-            else:
-                st.text("Failed to get price") 
+            game_price(data['steam_appid'])
         with right:
             st.link_button("Go to store page", f"https://store.steampowered.com/app/{data['steam_appid']}")
     with st.container():
@@ -289,28 +264,15 @@ def game_card(data, hardwareDataset, userSteam):
             st.text(', '.join(data['categories']))
     with st.expander("Minimum Spesification"):
         left, right = st.columns([1,1])
-        # with left:
-        #     st.subheader("Categories")
-        # with right:
-        #     st.subheader("Preference")
-        # print(get_spec_recomendation(data['minimum_req']))
         for name, value in get_spec_recomendation(data['minimum_req']).items():
             with st.container():
                 left, right = st.columns([1,1])
                 with left:
                     st.caption(name)
-                    
                 with right:
                     st.text(value)
         minimum_req_input(data['minimum_req'], data['name'], hardwareDataset, userSteam)      
     st.divider()          
-    # st.table(get_spec_recomendation(data['minimum_req']))
-    
-    # left, right = st.columns([1,1])
-    # with left:
-    #     st.dataframe(pd.DataFrame(data['genres'], columns=["Genres"]), hide_index=True, use_container_width=True)
-    # with right:
-    #     st.dataframe(pd.DataFrame(data['categories'], columns=["Categories"]),hide_index=True, use_container_width=True)
                     
 def get_spec_recomendation(minimum):
     b = re.sub(r"[\[\]']", '', minimum)

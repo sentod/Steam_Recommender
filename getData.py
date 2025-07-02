@@ -79,64 +79,66 @@ def get_user_game(userSteam, gameDataset):
     owned_game_data = []
     progress_text = 'getting all user games'
     initial_df_progress = st.progress(0, text=progress_text)
-    user_games = deque(userSteam.user_games)
-    index = 0
-    while len(user_games) > 0:
-        games = user_games.popleft()
-        initial_df_progress.progress(index/len(userSteam.user_games), progress_text)
-        try:
-            is_in_dataset_game = gameDataset.games_dataset[gameDataset.games_dataset['steam_appid'] == int(games['appid'])]
-            is_in_ignored_dataset_game = gameDataset.ignored_games_dataset[gameDataset.ignored_games_dataset['appid'] == int(games['appid'])]
-            if not is_in_dataset_game.empty:
-                data_game = gameDataset.games_dataset.iloc[is_in_dataset_game.index[0]].to_dict()
-            elif is_in_dataset_game.empty and is_in_ignored_dataset_game.empty:
-                response2 = requests.get(detail_game_url(games['appid']), headers=headers)
-                if response2.status_code == 200:
-                    data_game = (response2.json())[str(games['appid'])]
-                    if data_game.get('data', {}):
-                        data_game = (response2.json())[str(games['appid'])]['data']
-                        loadData.add_games_to_csv(data_game, games['appid'])
-                    else:
-                        loadData.add_games_to_unsuccess_csv(games['appid'])
-                        data_game = None
-                elif response2.status_code == 429:
-                    user_games.appendleft(games)
-                    print(f"Too many requests. Put App ID {games['appid']} back to deque. Sleep for 10 sec")
-                    time.sleep(10)
-                    data_game = None
-                    continue
+    if userSteam.user_games is not None:
+        user_games = deque(userSteam.user_games)
+        index = 0
+        while len(user_games) > 0:
+            games = user_games.popleft()
+            initial_df_progress.progress(index/len(userSteam.user_games), progress_text)
             try:
-                if data_game is not None:
-                    owned_game_genres = []
-                    if data_game.get('genres'):
-                        if type(data_game['genres']) == str:
-                            data_game['genres'] = ast.literal_eval(data_game['genres'])
-                        if type(data_game['genres']) == list:
-                            for game_genres in data_game['genres']:
-                                owned_game_genres.append('1.'+game_genres['id'])
-                    if data_game.get('categories'):
-                        if type(data_game['categories']) == str:
-                                data_game['categories'] = ast.literal_eval(data_game['categories'])
-                        if type(data_game['categories']) == list:
-                            for game_categories in data_game['categories']:
-                                owned_game_genres.append('2.'+str(game_categories['id']))
-                    owned_game_genres = list(map(float, set(owned_game_genres)))
-                    data_game_result = {}
-                    data_game_result['genres'] = owned_game_genres
-                    data_game_result['playtimeInMinutes'] = games['playtime_forever']
-                    owned_game_data.append(data_game_result)
-            except json.JSONDecodeError:
-                print("Error: Could not decode JSON response.")
-                exit()
-        except Exception as e: 
-            print(f"An unexpected error occurred: {e} {type(data_game.get('genres', {}))}../")
-            data_game = None 
-            continue  
-        playtime += games["playtime_forever"]
-        userSteam.user_playtime = playtime
-        index += 1
-    initial_df_progress.empty()
-    return owned_game_data
+                is_in_dataset_game = gameDataset.games_dataset[gameDataset.games_dataset['steam_appid'] == int(games['appid'])]
+                is_in_ignored_dataset_game = gameDataset.ignored_games_dataset[gameDataset.ignored_games_dataset['appid'] == int(games['appid'])]
+                if not is_in_dataset_game.empty:
+                    data_game = gameDataset.games_dataset.iloc[is_in_dataset_game.index[0]].to_dict()
+                elif is_in_dataset_game.empty and is_in_ignored_dataset_game.empty:
+                    response2 = requests.get(detail_game_url(games['appid']), headers=headers)
+                    if response2.status_code == 200:
+                        data_game = (response2.json())[str(games['appid'])]
+                        if data_game.get('data', {}):
+                            data_game = (response2.json())[str(games['appid'])]['data']
+                            loadData.add_games_to_csv(data_game, games['appid'])
+                        else:
+                            loadData.add_games_to_unsuccess_csv(games['appid'])
+                            data_game = None
+                    elif response2.status_code == 429:
+                        user_games.appendleft(games)
+                        print(f"Too many requests. Put App ID {games['appid']} back to deque. Sleep for 10 sec")
+                        time.sleep(10)
+                        data_game = None
+                        continue
+                try:
+                    if data_game is not None:
+                        owned_game_genres = []
+                        if data_game.get('genres'):
+                            if type(data_game['genres']) == str:
+                                data_game['genres'] = ast.literal_eval(data_game['genres'])
+                            if type(data_game['genres']) == list:
+                                for game_genres in data_game['genres']:
+                                    owned_game_genres.append('1.'+game_genres['id'])
+                        if data_game.get('categories'):
+                            if type(data_game['categories']) == str:
+                                    data_game['categories'] = ast.literal_eval(data_game['categories'])
+                            if type(data_game['categories']) == list:
+                                for game_categories in data_game['categories']:
+                                    owned_game_genres.append('2.'+str(game_categories['id']))
+                        owned_game_genres = list(map(float, set(owned_game_genres)))
+                        data_game_result = {}
+                        data_game_result['genres'] = owned_game_genres
+                        data_game_result['playtimeInMinutes'] = games['playtime_forever']
+                        owned_game_data.append(data_game_result)
+                except json.JSONDecodeError:
+                    print("Error: Could not decode JSON response.")
+                    exit()
+            except Exception as e: 
+                print(f"An unexpected error occurred: {e} ../")
+                data_game = None 
+                continue  
+            playtime += games["playtime_forever"]
+            userSteam.user_playtime = playtime
+            index += 1
+        initial_df_progress.empty()
+        return owned_game_data
+    else: return None
 
 def search_appid(gameDataset, appid):
     is_in_dataset_game = gameDataset.games_dataset[gameDataset.games_dataset['steam_appid'] == int(appid)]
@@ -156,21 +158,24 @@ def search_appid(gameDataset, appid):
 #             time.sleep(5)
 #             data_game = None
 #             continue
+
+def get_games_price(appid):
+    return asyncio.run(games_price(appid))
         
-async def get_games_price(appid):
+async def games_price(appid):
     session = None
     url = price_game_url(appid)
     try:
         session = aiohttp.ClientSession()
-        retry = False
-        while retry == False :
+        retry = True
+        while retry == True :
             async with session.get(url, timeout=5) as response:
-                if response.status == 429 :
-                    print(f"Too many requests. Retry for getting prices. Sleep for 5 sec")
-                    time.sleep(5)
-                    retry = True
-                    continue
-                else:
+                # if response.status == 429 :
+                #     print(f"Too many requests. Retry for getting prices. Sleep for 5 sec")
+                #     await asyncio.sleep(5)
+                #     retry = True
+                #     continue
+                # else:
                     retry = False
                     response.raise_for_status()
                     return await response.json()
